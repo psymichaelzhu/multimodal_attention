@@ -11,17 +11,18 @@ from PIL import Image
 import time
 from tqdm import tqdm
 
-change_dir = "/Users/rezek_zhu/clip_social_annotation/code/selective_attention"
+change_dir = "/Users/rezek_zhu/multimodal_attention"
 os.chdir(change_dir)
 print(os.getcwd())
 
 # %% helper function
-def get_first_frame(video_path):
+def get_first_frame(video_path,to_rgb=True):
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()
     cap.release()
     if ret:
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        if to_rgb:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = cv2.resize(frame, (300, 250))
         return frame
     return None
@@ -36,26 +37,22 @@ def create_file(file_path):
         return result.id
 
 # %% extract first frame for all videos
-output_dir = "../../data/video/first_frame"
-
-video_dir = "../../data/video/original_clips"
+output_dir = "data/video/first_frame"
+video_dir = "data/video/original_clip"
 video_files = [f for f in os.listdir(video_dir) if f.endswith(('.mp4', '.avi', '.mov'))]
+overwrite = True
 
 if not os.path.exists(output_dir):
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir)
 
-if False:
-    os.makedirs(output_dir, exist_ok=True)
-    for video_file in video_files:
+for video_file in tqdm(video_files, desc="Extracting first frames"):
+    output_filename = os.path.splitext(video_file)[0] + ".png"
+    output_path = os.path.join(output_dir, output_filename)
+    
+    if overwrite or not os.path.exists(output_path):
         video_path = os.path.join(video_dir, video_file)
-        frame = get_first_frame(video_path)
-        
-        output_filename = os.path.splitext(video_file)[0] + ".png"
-        output_path = os.path.join(output_dir, output_filename)
-        
-        cv2.imwrite(output_path, frame)
-else:
-    print("Output frames already exist")
+        frame = get_first_frame(video_path,to_rgb=False)
+        cv2.imwrite(output_path, frame) #cv2.imwrite expects BGR format
 
 file_paths = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
 
@@ -69,7 +66,7 @@ client = OpenAI()
 
 results = pd.DataFrame(columns=['video_name', 'simulation_id', 'content'])
 
-results_file = "../../data/video/descriptions.csv"
+results_file = "data/video/descriptions.csv"
 if os.path.exists(results_file):
     existing_results = pd.read_csv(results_file)
     processed_videos = set(existing_results['video_name'])
@@ -77,7 +74,7 @@ else:
     existing_results = pd.DataFrame(columns=['video_name', 'simulation_id', 'content'])
     processed_videos = set()
 
-for file_path in tqdm(file_paths[0:3], desc="Processing videos"):
+for file_path in tqdm(file_paths, desc="Processing videos"):
     video_name = os.path.splitext(os.path.basename(file_path))[0]
     
     video_descriptions = []
@@ -118,7 +115,7 @@ for file_path in tqdm(file_paths[0:3], desc="Processing videos"):
             
             results.loc[len(results)] = {
                 'video_name': video_name,
-                'simulation_id': sim,
+                'simulation_id': sim+1,
                 'content': description
             }
 
