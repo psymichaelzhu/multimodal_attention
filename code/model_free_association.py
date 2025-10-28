@@ -1,5 +1,5 @@
 # %% objective
-#  use multi-modal model to describe videos in natural language
+#  use multi-modal model to annotate video through free association
 
 # %% preparation
 import os
@@ -60,18 +60,20 @@ file_paths = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.e
 
 # use multi-modal model to describe videos 
 show_result = False
-n_simulation = 5
+n_simulation = 10
+n_word = 7
 model_name = "gpt-4.1-mini"
-prompt = "Describe this picture in concise language:"
+prompt = f"List {n_word} words that best describe this scene (in descending order of relevance):"
 
 client = OpenAI()
 
 results = pd.DataFrame(columns=['video_name', 'simulation_id', 'content'])
-    
-results_file = f"data/video/caption/{frame_index}.csv"
 
-if not os.path.exists(f"data/video/caption"):
-    os.makedirs(f"data/video/caption")
+
+results_file = f"data/video/free_association/{frame_index}.csv"
+
+if not os.path.exists(f"data/video/free_association"):
+    os.makedirs(f"data/video/free_association")
 
 if os.path.exists(results_file):
     existing_results = pd.read_csv(results_file)
@@ -98,14 +100,15 @@ for file_path in tqdm(file_paths, desc=f"Processing frame {frame_index}"):
                     response = client.responses.create( # temperature = 1 by default
                         model=model_name,
                         input=[{
-                            "role": "user",
+                            "role": "system",
+                            "content": "Output only words separated by commas. No explanations, no extra text. Hyphenated compounds are allowed when needed."
+                        },
+                        {
+                            "role": "user", 
                             "content": [
                                 {"type": "input_text", "text": prompt},
-                                {
-                                    "type": "input_image",
-                                    "file_id": file_id,
-                                },
-                            ],
+                                {"type": "input_image", "file_id": file_id}
+                            ]
                         }],
                     )
                     break  
