@@ -39,7 +39,7 @@ elif model_source == "clip":
 
 # %% obtain embeddings
 # embedding directory for lab stimuli pictures
-embedding_dir = 'data/lab_stimuli/embedding/{}/{}/{}'.format(
+embedding_dir = 'data/lab_stimuli_v2/embedding/{}/{}/{}'.format(
     model_source.replace('/', '-'),
     model_name.replace('/', '-'),
     pretrained_name.replace('/', '-')
@@ -48,7 +48,7 @@ print("embedding_dir:", embedding_dir)
 os.makedirs(embedding_dir, exist_ok=True)
 
 # image list
-picture_dir = 'data/lab_stimuli/picture'
+picture_dir = 'data/lab_stimuli_v2/picture'
 picture_name_list = [f for f in os.listdir(picture_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
 
 embedding_path = os.path.join(embedding_dir, 'picture_embedding.npy')
