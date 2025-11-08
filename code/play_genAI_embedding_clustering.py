@@ -35,7 +35,7 @@ model.eval()
 # %% --------- Specify your picture directory ---------
 os.chdir('/Users/rezek_zhu/multimodal_attention')  
 print(os.getcwd())
-target_dir = 'data/lab_stimuli_v4'
+target_dir = 'data/genAI_stimuli1'
 picture_dir = os.path.join(target_dir, 'picture')  # <-- EDIT this path as needed
 
 # %% --------- Collect list of image paths ---------
@@ -94,15 +94,41 @@ else:
 # To filter, adjust filter_image_names or filter_substrings as needed.
 
 # Option 1: Filter by explicit list
-filter_image_names = None  # e.g. ['cat1.jpg', 'dog2.png']
+filter_image_names = None # ['circle_cross_red.png', 'circle_cross_blue.png', 'circle_cross_green.png'] 
 # Option 2: Filter by substring matching
-filter_substrings = []  # e.g. ['cat', 'dog']
+filter_substrings = ["_park1"]  
 
 if filter_image_names is not None:
     selected_mask = [name in filter_image_names for name in valid_names]
+
 elif filter_substrings:
+    def match_substring_in_name(name, substr):
+        # Exact match
+        if name == substr:
+            return True
+        # '_substr_' - match only at start or on word boundary
+        if name.startswith(substr):
+            # make sure not treating char before as underscore
+            return True
+        if f"_{substr}" in name:
+            # Split by underscore, check for substr between underscores or after
+            parts = name.split('_')
+            for part in parts[1:]:
+                if part.startswith(substr):
+                    return True
+        return False
+
     selected_mask = [
-        any(substr in name for substr in filter_substrings)
+        any(
+            # Must not be preceeded by '_'
+            (
+                name.find(substr) != -1 and 
+                (
+                    name.find(substr) == 0 or name[name.find(substr) - 1] != '_'
+                )
+            ) if substr != "" else False
+            for substr in filter_substrings
+        )
         for name in valid_names
     ]
 else:
