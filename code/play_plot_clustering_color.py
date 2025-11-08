@@ -33,8 +33,8 @@ if focus_type == 'video':
     print("Loaded embedding shape:", picture_embedding.shape)
     print("Loaded names (from picture_dir):", len(picture_name_list))
 else:
-    embedding_path = 'data/lab_stimuli_v3/embedding/openclip/ViT-H-14-378-quickgelu/dfn5b/picture_embedding.npy'
-    picture_dir = 'data/lab_stimuli_v3/picture'
+    embedding_path = 'data/lab_stimuli_color/embedding/openclip/ViT-H-14-378-quickgelu/dfn5b/picture_embedding.npy'
+    picture_dir = 'data/lab_stimuli_color/picture'
     picture_embedding = np.load(embedding_path)
     picture_name_list = [f for f in os.listdir(picture_dir) if f.endswith('.jpg') or f.endswith('.png') or f.endswith('.jpeg')]
     picture_name_list = np.array(picture_name_list)
@@ -63,7 +63,7 @@ def get_image(path):
         print("Error loading image:", path, e)
         return None
 
-def analyze_clusters(embedding, name_list, picture_dir, cluster_num=11):
+def analyze_clusters(embedding, name_list, picture_dir, cluster_num=11,random_state=3):
     # Cluster color palette
     colors = [
         "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
@@ -74,13 +74,13 @@ def analyze_clusters(embedding, name_list, picture_dir, cluster_num=11):
 
     embedding_np = embedding
     # 1-1. PCA: using optimal n_components that exceeds 95% explained variance ratio
-    pca_full = PCA(random_state=42)
+    pca_full = PCA(random_state=random_state)
     pca_full.fit(embedding_np)
     cumsum = np.cumsum(pca_full.explained_variance_ratio_)
     pca_threshold = 0.95
     best_n_components = np.argmax(cumsum >= pca_threshold) + 1
 
-    pca = PCA(n_components=best_n_components, random_state=42)
+    pca = PCA(n_components=best_n_components, random_state=random_state)
     reduced_embedding = pca.fit_transform(embedding_np)
 
     plt.figure(figsize=(10, 4))
@@ -125,7 +125,7 @@ def analyze_clusters(embedding, name_list, picture_dir, cluster_num=11):
     plt.show()
 
     # Plot 2: 2D scatter plot with representative images
-    pca_2d = PCA(n_components=2, random_state=42)
+    pca_2d = PCA(n_components=2, random_state=random_state)
     embedding_2d = pca_2d.fit_transform(reduced_embedding)
 
     plt.figure(figsize=(12, 8))
@@ -272,159 +272,8 @@ def plot_lab_stimuli_similarity_and_correlation(picture_embedding, picture_name_
 
 # %% for whole set
 # clustering and visualization
-analyze_clusters(picture_embedding, picture_name_list, picture_dir)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(picture_embedding, picture_name_list)
-
-# %% subset attention
-import numpy as np
-
-def filter_stimuli(names, embeddings, shape=None, texture=None, color=None):
-    """
-    names: list/array of image file names
-    embeddings: numpy array or tensor, shape (N, ...)
-    shape, texture, color: str or list/tuple of strings or None
-    Returns: filtered_names, filtered_embeds, selected_indices
-    """
-    if isinstance(names, np.ndarray):
-        names = names.tolist()
-
-    if shape is not None and not isinstance(shape, (list, tuple, set)):
-        shape = [shape]
-    if texture is not None and not isinstance(texture, (list, tuple, set)):
-        texture = [texture]
-    if color is not None and not isinstance(color, (list, tuple, set)):
-        color = [color]
-        
-    selected_indices = []
-    for idx, fname in enumerate(names):
-        # file names like: shape_texture_color.png
-        parts = fname.rsplit('.', 1)[0].split('_')
-        if len(parts) < 3:
-            continue
-        match = True
-        if shape is not None and parts[0] not in shape:
-            match = False
-        if texture is not None and parts[1] not in texture:
-            match = False
-        if color is not None and parts[2] not in color:
-            match = False
-        if match:
-            selected_indices.append(idx)
-    filtered_names = [names[i] for i in selected_indices]
-    if hasattr(embeddings, "__getitem__"):
-        filtered_embeds = embeddings[selected_indices]
-    else:
-        filtered_embeds = [embeddings[i] for i in selected_indices]
-
-    print(
-        f"Selected {len(filtered_names)} images",
-        f"{'with shape in ' + str(shape) if shape else ''}",
-        f"{'with texture in ' + str(texture) if texture else ''}",
-        f"{'with color in ' + str(color) if color else ''}"
-    )
-    return filtered_names, filtered_embeds, selected_indices
-
+analyze_clusters(picture_embedding, picture_name_list, picture_dir, random_state=1)
 
 
 # %%
 
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","star","slash"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
-)
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-# %%
-
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash","dot"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-
-# %%
-
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square","triangle"],
-    color=["blue", "red"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-# %%
-
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square","star"],
-    color=["blue", "red"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-# %%
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash","dot","star"],
-    shape=["circle", "square","triangle","star"],
-    color=["blue", "red","#71F3F5"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-# %%
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-# %%

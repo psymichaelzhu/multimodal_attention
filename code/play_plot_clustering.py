@@ -33,8 +33,8 @@ if focus_type == 'video':
     print("Loaded embedding shape:", picture_embedding.shape)
     print("Loaded names (from picture_dir):", len(picture_name_list))
 else:
-    embedding_path = 'data/lab_stimuli_v3/embedding/openclip/ViT-H-14-378-quickgelu/dfn5b/picture_embedding.npy'
-    picture_dir = 'data/lab_stimuli_v3/picture'
+    embedding_path = 'data/lab_stimuli_v4/embedding/openclip/ViT-H-14-378-quickgelu/dfn5b/picture_embedding.npy'
+    picture_dir = 'data/lab_stimuli_v4/picture'
     picture_embedding = np.load(embedding_path)
     picture_name_list = [f for f in os.listdir(picture_dir) if f.endswith('.jpg') or f.endswith('.png') or f.endswith('.jpeg')]
     picture_name_list = np.array(picture_name_list)
@@ -328,103 +328,231 @@ def filter_stimuli(names, embeddings, shape=None, texture=None, color=None):
 
 
 
-# %%
+#%% texture only
 
 filtered_names, filtered_embeds, selected_indices = filter_stimuli(
     picture_name_list, picture_embedding,
-    texture=["cross","star","slash"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
-)
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-# %%
-
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash","dot"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
+    texture=["cross","slash","dot","star","dash"],
+    shape=["square"],
+    color=["blue"]
 )
 
+
 # clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
+analyze_clusters(filtered_embeds, filtered_names, picture_dir)
 
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-
-# %%
-
-
+# %% shape only
 
 filtered_names, filtered_embeds, selected_indices = filter_stimuli(
     picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square","triangle"],
-    color=["blue", "red"]
-)
-
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir, cluster_num=3)
-
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-# %%
-
-
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
-    picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square","star"],
-    color=["blue", "red"]
+    texture=["slash"],
+    shape=["circle", "square","triangle","star","cross"],
+    color=["blue"]
 )
 
 # clustering and visualization
 analyze_clusters(filtered_embeds, filtered_names, picture_dir)
 
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
-
-
-# %%
+# %% color only
 
 
 filtered_names, filtered_embeds, selected_indices = filter_stimuli(
     picture_name_list, picture_embedding,
-    texture=["cross","slash"],
+    texture=["slash"],
+    shape=["circle"],
+    color=["blue", "red", "green", "#71F3F5", "#E24DAB"]
+)
+
+# clustering and visualization
+analyze_clusters(filtered_embeds, filtered_names, picture_dir)
+# %%
+
+filtered_names, filtered_embeds, selected_indices = filter_stimuli(
+    picture_name_list, picture_embedding,
+    texture=["slash","cross"],
     shape=["circle", "square","triangle","star"],
-    color=["blue", "red"]
+    color=["blue","red"]
 )
 
 # clustering and visualization
 analyze_clusters(filtered_embeds, filtered_names, picture_dir)
 
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
+# %%
+import numpy as np
+import matplotlib.pyplot as plt
+
+def compute_pairwise_similarity(embeds):
+    normed = embeds / np.linalg.norm(embeds, axis=1, keepdims=True)
+    sim = np.dot(normed, normed.T)
+    return sim
+
+def plot_groupwise_pairwise_similarity(
+        picture_name_list, picture_embedding, 
+        Group, Pairwise, Control,
+        dim_order=None,
+        compute_pairwise_similarity=compute_pairwise_similarity
+    ):
+    """
+    For every element in Group[dim], plot a pairwise similarity matrix along Pairwise dimension,
+    controlling other dimensions according to Control.
+
+    After all, plot a summary: each column is a Group value,
+    points for that column are the upper-triangular similarities from the pairwise matrix.
+    """
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    # helpers
+    def _features_in_name(name, features, dim):
+        return any(f in name for f in features)
+
+    def _extract_dim_value(name, dim, options):
+        for val in options:
+            if val in name:
+                return val
+        return None
+
+    # Auto-detect dim_order if not given
+    all_dims = []
+    all_dims.extend(Group.keys())
+    all_dims.extend(Pairwise.keys())
+    all_dims.extend(Control.keys())
+    dim_order = dim_order or []
+    seen = set()
+    for d in all_dims:
+        if d not in seen:
+            dim_order.append(d)
+            seen.add(d)
+
+    group_dim, group_vals = next(iter(Group.items()))
+    pairwise_dim, pairwise_vals = next(iter(Pairwise.items()))
+    control_dims = Control.keys()
+
+    # For collecting results across groups
+    uppertri_sims_by_group = []  # list of lists, each inner list is the upper-tri sim values for a group
+    group_labels             = []  # group value for each column
+
+    for group_val in group_vals:
+        # Prepare selection filter for this group_val
+        filter_args = {}
+        filter_args[group_dim] = [group_val]
+        filter_args[pairwise_dim] = pairwise_vals
+        for d in control_dims:
+            filter_args[d] = Control[d]
+
+        filtered_names, filtered_embeds, selected_indices = filter_stimuli(
+            picture_name_list,
+            picture_embedding,
+            **filter_args
+        )
+        if len(filtered_names) == 0:
+            uppertri_sims_by_group.append([])
+            group_labels.append(str(group_val))
+            continue
+
+        # Index the pairwise features: collect samples belonging to each pairwise value
+        pairwise_to_indices = {feat: [] for feat in pairwise_vals}
+        for idx, name in enumerate(filtered_names):
+            for t in pairwise_vals:
+                if t in name:
+                    pairwise_to_indices[t].append(idx)
+                    break
+
+        actual_pairwise = [t for t in pairwise_vals if len(pairwise_to_indices[t]) > 0]
+        if len(actual_pairwise) < 2:
+            uppertri_sims_by_group.append([])
+            group_labels.append(str(group_val))
+            continue
+
+        pw_embeds = []
+        for t in actual_pairwise:
+            first_idx = pairwise_to_indices[t][0]
+            pw_embeds.append(filtered_embeds[first_idx])
+        pw_embeds = np.stack(pw_embeds, axis=0)
+
+        sim_matrix = compute_pairwise_similarity(pw_embeds)
+
+        # --- Save all upper triangle values (excluding diagonal) for later summary plot ---
+        n = sim_matrix.shape[0]
+        if n > 1:
+            triu_inds = np.triu_indices(n, k=1)
+            uppertri_vals = sim_matrix[triu_inds]
+            uppertri_sims_by_group.append(list(uppertri_vals))
+        else:
+            uppertri_sims_by_group.append([])
+        group_labels.append(str(group_val))
+
+        # --- Optionally plot the per-group matrix individually, comment this block out or keep ---
+        control_str = ' - '.join([f"{d}: {Control[d][0] if len(Control[d])==1 else Control[d]}" for d in control_dims])
+        title_str = f"{group_dim.capitalize()}: {group_val}"
+        if control_str:
+            title_str = f"{control_str} | {title_str}"
+        title_str += f": Pairwise {pairwise_dim.capitalize()} Similarity"
+
+        plt.figure(figsize=(6, 5))
+        im = plt.imshow(sim_matrix, cmap="viridis", vmin=-1, vmax=1)
+        plt.colorbar(im, fraction=0.046, pad=0.04)
+        plt.xticks(range(len(actual_pairwise)), actual_pairwise, rotation=45)
+        plt.yticks(range(len(actual_pairwise)), actual_pairwise)
+        plt.title(title_str)
+        for i in range(len(actual_pairwise)):
+            for j in range(len(actual_pairwise)):
+                plt.text(j, i, f"{sim_matrix[i, j]:.2f}", 
+                         ha="center", va="center", color="w" if abs(sim_matrix[i,j])<0.5 else "black", fontsize=10)
+        plt.tight_layout()
+        plt.show()
+
+    # ---- SUMMARY PLOT: each group is a column, points as upper4 triangle pairwise similarities ----
+    plt.figure(figsize=(1.2*len(group_labels), 5))
+    for x, (vals, lab) in enumerate(zip(uppertri_sims_by_group, group_labels)):
+        if len(vals) == 0:
+            continue
+        plt.scatter([x]*len(vals), vals, color='tab:blue', alpha=0.85, label=None)
+        # Also plot mean as a bar/mark
+        plt.plot([x-0.2, x+0.2], [np.mean(vals)]*2, color='red', linewidth=2, label='Mean' if x==0 else None)
+
+    plt.xticks(range(len(group_labels)), group_labels, rotation=30)
+    plt.title(f"Upper-Triangle Pairwise Similarity per {group_dim.capitalize()}")
+    plt.ylabel("Cosine Similarity")
+    plt.xlabel(group_dim.capitalize())
+    plt.ylim([-1, 1])
+    # Only show legend once
+    handles, labels = plt.gca().get_legend_handles_labels()
+    if 'Mean' in labels:
+        plt.legend(['Mean'], loc='lower right')
+    plt.tight_layout()
+    plt.show()
+
 
 
 # %%
-
-filtered_names, filtered_embeds, selected_indices = filter_stimuli(
+plot_groupwise_pairwise_similarity(
     picture_name_list, picture_embedding,
-    texture=["cross","slash"],
-    shape=["circle", "square"],
-    color=["blue", "red"]
-)
+    Group={"shape": ["square", "circle", "triangle", "star", "cross"]},
+    Pairwise={"texture": ["cross", "slash", "dot", "star", "dash"]},
+    Control={"color": ["red"]}
+ )
 
-# clustering and visualization
-analyze_clusters(filtered_embeds, filtered_names, picture_dir)
+plot_groupwise_pairwise_similarity(
+    picture_name_list, picture_embedding,
+    Group={"texture": ["cross", "slash", "dot", "star", "dash"]},
+    Pairwise={"shape": ["square", "circle", "triangle", "star", "cross"]},
+    Control={"color": ["red"]}
+ )
 
-# similarity and correlation
-plot_lab_stimuli_similarity_and_correlation(filtered_embeds, filtered_names)
+
+# %%
+plot_groupwise_pairwise_similarity(
+    picture_name_list, picture_embedding,
+    Group={"texture": ["cross", "slash", "dot", "star", "dash"]},
+    Pairwise={"color": ["blue", "red", "green", "#71F3F5", "#E24DAB"] },
+    Control={"shape": ["square"]}
+ )
+# %%
+plot_groupwise_pairwise_similarity(
+    picture_name_list, picture_embedding,
+    Group={"shape": ["square", "circle", "triangle", "star", "cross"]},
+    Pairwise={"color": ["blue", "red", "green", "#71F3F5", "#E24DAB"] },
+    Control={"texture": ["dash"]}
+ )
 # %%
