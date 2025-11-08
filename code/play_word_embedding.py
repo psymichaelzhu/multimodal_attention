@@ -160,7 +160,7 @@ PAIRWISE_SCATTER_ALPHA = 0.15
 PAIRWISE_SCATTER_JITTER = 0.18
 
 def plot_dimension_similarity(text_embeddings, who_list, what_list, where_list, 
-                             dimension='who', sample_size=10, random_seed=42):
+                             dimension='who', sample_size=10, random_seed=42, return_corr_data=False):
     """
     Compute and visualize within-group and between-group similarities for a specified dimension.
     Supported dimensions: 'who', 'what', 'where'.
@@ -168,6 +168,7 @@ def plot_dimension_similarity(text_embeddings, who_list, what_list, where_list,
         - Between-group similarity heatmap (sampled)
         - Within-group similarity scatter (sampled) with fixed axes and jitter
         - Correlation between within-group and between-group mean similarity (fixed axes)
+    If return_corr_data is True, also return (within_means, between_means, dimension)
     """
     # Prepare group lists and indices
     if dimension == 'who':
@@ -243,8 +244,13 @@ def plot_dimension_similarity(text_embeddings, who_list, what_list, where_list,
     # (a) Between-group similarity heatmap
     plt.subplot(1,2,1)
     submat = group_sims[np.ix_(sampled, sampled)]
-    sns.heatmap(submat, xticklabels=sampled_names, yticklabels=sampled_names, annot=True, fmt=".2f", 
-                cmap="viridis", vmin=SIM_HEATMAP_VMIN, vmax=SIM_HEATMAP_VMAX, cbar_kws={'label':'Cosine sim.', 'shrink': 0.95})
+    sns.heatmap(
+        submat, 
+        xticklabels=sampled_names, yticklabels=sampled_names, 
+        annot=True, fmt=".2f", 
+        cmap="viridis", vmin=SIM_HEATMAP_VMIN, vmax=SIM_HEATMAP_VMAX, 
+        cbar_kws={'label':'Cosine sim.', 'shrink': 0.95}
+    )
     plt.title(f"Between-{dimension} mean embedding similarity ({sample_size} sampled {dimension})")
     plt.xticks(rotation=90)
     plt.yticks(rotation=0)
@@ -295,11 +301,57 @@ def plot_dimension_similarity(text_embeddings, who_list, what_list, where_list,
     plt.tight_layout()
     plt.show()
 
-# Example Usage:
-plot_dimension_similarity(text_embeddings, who_list, what_list, where_list, dimension='who')
-plot_dimension_similarity(text_embeddings, who_list, what_list, where_list, dimension='what')
-plot_dimension_similarity(text_embeddings, who_list, what_list, where_list, dimension='where')
+    # --- 新增: 如果要求，返回最后一张图的两组数据及标签 ---
+    if return_corr_data:
+        return within_means, between_means, dimension
+    else:
+        return None
 
+# Example Usage:
+corr_data = {}  # 用于保存每个维度的最后一张图数据
+for dim in ['who', 'what', 'where']:
+    result = plot_dimension_similarity(
+        text_embeddings, who_list, what_list, where_list, 
+        dimension=dim, 
+        sample_size=10, 
+        random_seed=42,
+        return_corr_data=True
+    )
+    if result is not None:
+        within_means, between_means, dimension_label = result
+        corr_data[dimension_label] = (within_means, between_means)
+
+# --- 拼合所有维度的correlation数据到一张图 ---
+plt.figure(figsize=(8,6))
+dim_colors = {'who': 'C0', 'what': 'C1', 'where': 'C2'}
+for dim in ['who', 'what', 'where']:
+    if dim in corr_data:
+        within_means, between_means = corr_data[dim]
+        plt.scatter(
+            within_means, between_means, 
+            alpha=0.30, s=38, 
+            label=dim, color=dim_colors[dim]
+        )
+        # Pearson 相关系数
+        corr, pval = pearsonr(within_means, between_means)
+        plt.text(
+            CORRELATION_XLIM[1]-0.02, 
+            CORRELATION_YLIM[0]+0.025+0.03*(['who','what','where'].index(dim)), 
+            f"{dim}: r={corr:.2f}, p={pval:.3g}", 
+            color=dim_colors[dim],
+            fontsize=11,
+            horizontalalignment='right',
+            verticalalignment='bottom'
+        )
+plt.xlabel("Within-group mean similarity")
+plt.ylabel("Between-group mean similarity to others")
+plt.title("Correlation: Within vs. Between Similarity (All Dimensions)")
+plt.xlim(CORRELATION_XLIM)
+plt.ylim(CORRELATION_YLIM)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
 
 # %%
 override, reading
