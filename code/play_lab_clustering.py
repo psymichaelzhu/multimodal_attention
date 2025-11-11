@@ -361,3 +361,24 @@ def embedding_arithmetic_test(
 
 
 # %%
+shape_list = ["shape", 'circle', 'square', 'triangle', 'star', 'cross']
+color_list = ["color", 'red', 'blue', 'green', 'yellow', 'purple']
+texture_list = ["texture", 'slash', 'cross', 'dot', 'star', 'dash']
+
+for text_list in [shape_list, texture_list, color_list]:
+    # 第一步：提取embedding
+    with torch.no_grad():
+        if 'open_clip' in globals():
+            text_tokens = tokenizer(text_list)
+            text_tokens = text_tokens.to(device)
+            text_features = model.encode_text(text_tokens)
+        else:
+            text_tokens = tokenizer(text_list).to(device)
+            text_features = model.encode_text(text_tokens)
+
+    # 第二步：求norm
+    emb_norm = text_features.norm(dim=1).cpu().numpy()
+    print(f"Embedding L2 norm for each text: {emb_norm}")
+
+
+# %%
