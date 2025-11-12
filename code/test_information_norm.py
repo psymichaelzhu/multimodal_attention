@@ -259,139 +259,28 @@ def analyze_increasing_information(description_dict, add_prefix=False):
     return norms
 
 
-# Define increasing information descriptions
-increasing_information_description_dict = {
-    "man": {
-        "L1": "a man",
-        "L2": "a tall man",
-        "L3": "a tall bearded man",
-        "L4": "a tall bearded young man",
-        "L5": "a tall bearded young slim man",
-        "L6": "a tall bearded young slim smiling man",
-        "L7": "a tall bearded young slim smiling Asian man",
-        "L8": "a tall bearded young slim smiling Asian casually-dressed man",
-        "L9": "a tall bearded young slim smiling Asian casually-dressed red-shirted man",
-        "L10": "a tall bearded young slim smiling Asian casually-dressed red-shirted friendly-looking man"
-    },
-    "car": {
-        "L1": "A car",
-        "L2": "A red car",
-        "L3": "A red compact car",
-        "L4": "A red compact modern car",
-        "L5": "A red compact modern electric car",
-        "L6": "A red compact modern electric aerodynamic car",
-        "L7": "A red compact modern electric aerodynamic sleek car",
-        "L8": "A red compact modern electric aerodynamic sleek glossy car",
-        "L9": "A red compact modern electric aerodynamic sleek glossy two-door car",
-        "L10": "A red compact modern electric aerodynamic sleek glossy two-door lightweight car"
-    },
-    "dog": {
-        "L1": "A dog",
-        "L2": "A brown dog",
-        "L3": "A brown fluffy dog",
-        "L4": "A brown fluffy energetic dog",
-        "L5": "A brown fluffy energetic medium-sized dog",
-        "L6": "A brown fluffy energetic medium-sized friendly dog",
-        "L7": "A brown fluffy energetic medium-sized friendly playful dog",
-        "L8": "A brown fluffy energetic medium-sized friendly playful outdoor dog",
-        "L9": "A brown fluffy energetic medium-sized friendly playful outdoor happy dog",
-        "L10": "A brown fluffy energetic medium-sized friendly playful outdoor happy tail-wagging dog"
-        },
-    "bird": {
-        "L1": "A bird",
-        "L2": "A small bird",
-        "L3": "A small yellow bird",
-        "L4": "A small yellow bright-feathered bird",
-        "L5": "A small yellow bright-feathered singing bird",
-        "L6": "A small yellow bright-feathered singing delicate bird",
-        "L7": "A small yellow bright-feathered singing delicate high-perched bird",
-        "L8": "A small yellow bright-feathered singing delicate high-perched cheerful bird",
-        "L9": "A small yellow bright-feathered singing delicate high-perched cheerful forest bird",
-        "L10": "A small yellow bright-feathered singing delicate high-perched cheerful forest wild bird"
-        },
-    "chair": {
-        "L1": "A chair",
-        "L2": "A wooden chair",
-        "L3": "A wooden sturdy chair",
-        "L4": "A wooden sturdy simple chair",
-        "L5": "A wooden sturdy simple light-brown chair",
-        "L6": "A wooden sturdy simple light-brown straight-backed chair",
-        "L7": "A wooden sturdy simple light-brown straight-backed polished chair",
-        "L8": "A wooden sturdy simple light-brown straight-backed polished minimalist chair",
-        "L9": "A wooden sturdy simple light-brown straight-backed polished minimalist dining chair",
-        "L10": "A wooden sturdy simple light-brown straight-backed polished minimalist dining smooth-edged chair"
-        },
-    "cup": {
-        "L1": "A cup",
-        "L2": "A ceramic cup",
-        "L3": "A ceramic white cup",
-        "L4": "A ceramic white small cup",
-        "L5": "A ceramic white small round-edged cup",
-        "L6": "A ceramic white small round-edged glossy cup",
-        "L7": "A ceramic white small round-edged glossy heat-resistant cup",
-        "L8": "A ceramic white small round-edged glossy heat-resistant smoothly-shaped cup",
-        "L9": "A ceramic white small round-edged glossy heat-resistant smoothly-shaped minimalist cup",
-        "L10": "A ceramic white small round-edged glossy heat-resistant smoothly-shaped minimalist lightweight cup"
-        },
-    "kitchen": {
-        "L1": "A kitchen",
-        "L2": "A modern kitchen",
-        "L3": "A modern bright kitchen",
-        "L4": "A modern bright clean kitchen",
-        "L5": "A modern bright clean spacious kitchen",
-        "L6": "A modern bright clean spacious organized kitchen",
-        "L7": "A modern bright clean spacious organized white-colored kitchen",
-        "L8": "A modern bright clean spacious organized white-colored stainless-steel kitchen",
-        "L9": "A modern bright clean spacious organized white-colored stainless-steel well-lit kitchen",
-        "L10": "A modern bright clean spacious organized white-colored stainless-steel well-lit minimalist kitchen"
-    },
-    "forest": {
-        "L1": "A forest",
-        "L2": "A dense forest",
-        "L3": "A dense green forest",
-        "L4": "A dense green misty forest",
-        "L5": "A dense green misty tranquil forest",
-        "L6": "A dense green misty tranquil tall-tree forest",
-        "L7": "A dense green misty tranquil tall-tree sunlit forest",
-        "L8": "A dense green misty tranquil tall-tree sunlit moss-covered forest",
-        "L9": "A dense green misty tranquil tall-tree sunlit moss-covered nature-rich forest",
-        "L10": "A dense green misty tranquil tall-tree sunlit moss-covered nature-rich atmospheric forest"
-    },
-}
-
-#%%
-# Analyze man descriptions
-man_norms = analyze_increasing_information(increasing_information_description_dict["man"], add_prefix=True)
-
-# %%
-# Analyze car descriptions
-car_norms = analyze_increasing_information(increasing_information_description_dict["car"], add_prefix=True)
-
-# %%
-for key in increasing_information_description_dict.keys():
-    print(key)
-    norms = analyze_increasing_information(increasing_information_description_dict[key], add_prefix=True)
-    print("--------------------------------")
-# %%
-
-# how to think about exceptions?
-
-
-# %% 
 # Simulation function for random description sampling
-def simulate_random_descriptions(description_list, target_list, n_sim_per_L):
+def simulate_random_descriptions(description, n_sim_per_L):
     """
     Generate random combinations of descriptions with increasing levels
     
     Args:
-        description_list: List of description words (e.g., ['tall', 'bearded', 'young', ...])
-        target_list: List of target words (e.g., ['one', 'man'])
+        description: Full description string (e.g., 'one tall bearded young slim man')
         n_sim_per_L: Number of simulations per level
     
     Returns:
         text_list: List of all generated text descriptions
         level_indices: List of level indices corresponding to each text
     """
+    # Split description into words
+    words = description.split()
+    
+    # Extract first and last words as target_list
+    target_list = [words[0], words[-1]]
+    
+    # Extract middle words as description_list
+    description_list = words[1:-1]
+    
     text_list = []
     level_indices = []
     
@@ -408,49 +297,142 @@ def simulate_random_descriptions(description_list, target_list, n_sim_per_L):
     
     return text_list, level_indices
 
-
-def plot_random_descriptions(description, target, n_sim_per_L):
+def plot_random_descriptions(description, n_sim_per_L, add_prefix=False):
     # Generate random descriptions
-    text_list, level_indices = simulate_random_descriptions(description, target, n_sim_per_L)
-
+    text_list, level_indices = simulate_random_descriptions(description, n_sim_per_L)
+    if add_prefix:
+        text_list = [f"A photo of {text}" for text in text_list]
     # Extract embeddings
     text_embeddings = extract_embedding(text_list, type="text", normalize=False)
     text_norms = text_embeddings.norm(dim=-1).cpu().numpy()
 
     # Plot norm vs. level with scatter points
     import matplotlib.pyplot as plt
-
-    plt.figure(figsize=(10, 6))
-
-    # Plot scatter points for each simulation
-    for level in range(1, len(description) + 1):
-        # Get indices for this level
-        level_mask = np.array(level_indices) == level
-        level_norms = text_norms[level_mask]
-        # Add small jitter for visibility
-        x_positions = np.ones(len(level_norms)) * level + np.random.normal(0, 0.05, len(level_norms))
-        plt.scatter(x_positions, level_norms, alpha=0.6, s=50)
-
-    # Plot mean line
-    level_means = [text_norms[np.array(level_indices) == level].mean() 
-                for level in range(1, len(description) + 1)]
-    plt.plot(range(1, len(description) + 1), level_means, 'r-', linewidth=2, label='Mean')
-
-    plt.xlabel('Number of Descriptions (Level)', fontsize=12)
-    plt.ylabel('Embedding Norm', fontsize=12)
-    plt.title(f'Embedding Norm vs. Description Level (n_sim={n_sim_per_L})', fontsize=14)
-    plt.legend()
-    plt.grid(True, alpha=0.3)
+    import seaborn as sns
+    
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    # Use seaborn regplot with polynomial order 2
+    sns.regplot(
+        x=level_indices,
+        y=text_norms,
+        order=2,
+        scatter_kws={'alpha': 0.6, 's': 50, 'color': 'steelblue'},
+        line_kws={'color': 'r', 'alpha': 0.4},
+        ax=ax
+    )
+    
+    ax.set_xlabel('Number of Descriptions (Level)', fontsize=12)
+    ax.set_ylabel('Embedding Norm', fontsize=12)
+    ax.set_title(f'{description} (n_sim={n_sim_per_L})', fontsize=14)
+    ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
 
-# %%
 
-# Example usage
-description = ['tall', 'bearded', 'young', 'slim', 'smiling', 'Asian', 
-               'casually-dressed', 'red-shirted', 'friendly-looking']
-target = ['one', 'man']
-n_sim_per_L = 100
-plot_random_descriptions(description, target, n_sim_per_L)
-# variation due to description content
+# %%
+# Define increasing information descriptions
+increasing_information_description_dict = {
+    "man": {
+        "L1": "one man",
+        "L2": "one tall man",
+        "L3": "one tall bearded man",
+        "L4": "one tall bearded young man",
+        "L5": "one tall bearded young slim man",
+        "L6": "one tall bearded young slim smiling man",
+        "L7": "one tall bearded young slim smiling Asian man",
+        "L8": "one tall bearded young slim smiling Asian casually-dressed man",
+        "L9": "one tall bearded young slim smiling Asian casually-dressed red-shirted man",
+        "L10": "one tall bearded young slim smiling Asian casually-dressed red-shirted friendly-looking man"
+    },
+    "car": {
+        "L1": "one car",
+        "L2": "one red car",
+        "L3": "one red compact car",
+        "L4": "one red compact modern car",
+        "L5": "one red compact modern electric car",
+        "L6": "one red compact modern electric aerodynamic car",
+        "L7": "one red compact modern electric aerodynamic sleek car",
+        "L8": "one red compact modern electric aerodynamic sleek glossy car",
+        "L9": "one red compact modern electric aerodynamic sleek glossy two-door car",
+        "L10": "one red compact modern electric aerodynamic sleek glossy two-door lightweight car"
+    },
+    "dog": {
+        "L1": "one dog",
+        "L2": "one brown dog",
+        "L3": "one brown fluffy dog",
+        "L4": "one brown fluffy energetic dog",
+        "L5": "one brown fluffy energetic medium-sized dog",
+        "L6": "one brown fluffy energetic medium-sized friendly dog",
+        "L7": "one brown fluffy energetic medium-sized friendly playful dog",
+        "L8": "one brown fluffy energetic medium-sized friendly playful outdoor dog",
+        "L9": "one brown fluffy energetic medium-sized friendly playful outdoor happy dog",
+        "L10": "one brown fluffy energetic medium-sized friendly playful outdoor happy tail-wagging dog"
+        },
+    "bird": {
+        "L1": "one bird",
+        "L2": "one small bird",
+        "L3": "one small yellow bird",
+        "L4": "one small yellow bright-feathered bird",
+        "L5": "one small yellow bright-feathered singing bird",
+        "L6": "one small yellow bright-feathered singing delicate bird",
+        "L7": "one small yellow bright-feathered singing delicate high-perched bird",
+        "L8": "one small yellow bright-feathered singing delicate high-perched cheerful bird",
+        "L9": "one small yellow bright-feathered singing delicate high-perched cheerful forest bird",
+        "L10": "one small yellow bright-feathered singing delicate high-perched cheerful forest wild bird"
+        },
+    "chair": {
+        "L1": "one chair",
+        "L2": "one wooden chair",
+        "L3": "one wooden sturdy chair",
+        "L4": "one wooden sturdy simple chair",
+        "L5": "one wooden sturdy simple light-brown chair",
+        "L6": "one wooden sturdy simple light-brown straight-backed chair",
+        "L7": "one wooden sturdy simple light-brown straight-backed polished chair",
+        "L8": "one wooden sturdy simple light-brown straight-backed polished minimalist chair",
+        "L9": "one wooden sturdy simple light-brown straight-backed polished minimalist dining chair",
+        "L10": "one wooden sturdy simple light-brown straight-backed polished minimalist dining smooth-edged chair"
+        },
+    "cup": {
+        "L1": "one cup",
+        "L2": "one ceramic cup",
+        "L3": "one ceramic white cup",
+        "L4": "one ceramic white small cup",
+        "L5": "one ceramic white small round-edged cup",
+        "L6": "one ceramic white small round-edged glossy cup",
+        "L7": "one ceramic white small round-edged glossy heat-resistant cup",
+        "L8": "one ceramic white small round-edged glossy heat-resistant smoothly-shaped cup",
+        "L9": "one ceramic white small round-edged glossy heat-resistant smoothly-shaped minimalist cup",
+        "L10": "one ceramic white small round-edged glossy heat-resistant smoothly-shaped minimalist lightweight cup"
+        },
+    "kitchen": {
+        "L1": "one kitchen",
+        "L2": "one modern kitchen",
+        "L3": "one modern bright kitchen",
+        "L4": "one modern bright clean kitchen",
+        "L5": "one modern bright clean spacious kitchen",
+        "L6": "one modern bright clean spacious organized kitchen",
+        "L7": "one modern bright clean spacious organized white-colored kitchen",
+        "L8": "one modern bright clean spacious organized white-colored stainless-steel kitchen",
+        "L9": "one modern bright clean spacious organized white-colored stainless-steel well-lit kitchen",
+        "L10": "one modern bright clean spacious organized white-colored stainless-steel well-lit minimalist kitchen"
+    },
+    "forest": {
+        "L1": "one forest",
+        "L2": "one dense forest",
+        "L3": "one dense green forest",
+        "L4": "one dense green misty forest",
+        "L5": "one dense green misty tranquil forest",
+        "L6": "one dense green misty tranquil tall-tree forest",
+        "L7": "one dense green misty tranquil tall-tree sunlit forest",
+        "L8": "one dense green misty tranquil tall-tree sunlit moss-covered forest",
+        "L9": "one dense green misty tranquil tall-tree sunlit moss-covered nature-rich forest",
+        "L10": "one dense green misty tranquil tall-tree sunlit moss-covered nature-rich atmospheric forest"
+    },
+}
+
+# %% law 1: more description, shorter norm
+for key in increasing_information_description_dict.keys():
+    plot_random_descriptions(increasing_information_description_dict[key]["L10"], n_sim_per_L=50, add_prefix=True)
 # %%
