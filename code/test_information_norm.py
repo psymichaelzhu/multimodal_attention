@@ -222,7 +222,8 @@ ax2.set_ylim(norm_ylim)
 plt.tight_layout()
 plt.show()
 
-# %%
+# %% main
+# %% helper functions
 def analyze_increasing_information(description_dict, add_prefix=False):
     """
     Analyze how embedding norm changes with increasing information levels
@@ -283,6 +284,7 @@ def simulate_random_descriptions(description, n_sim_per_L):
     
     text_list = []
     level_indices = []
+    description_sampled_list = []
     
     # For each level (1 to len(description_list))
     for level_idx in range(1, len(description_list) + 1):
@@ -294,18 +296,32 @@ def simulate_random_descriptions(description, n_sim_per_L):
             text = target_list[0] + " " + ", ".join(sampled_descriptions) + " " + target_list[1]
             text_list.append(text)
             level_indices.append(level_idx)
-    
-    return text_list, level_indices
+            description_sampled_list.append(sampled_descriptions)
+    return text_list, level_indices, description_list, description_sampled_list
 
-def plot_random_descriptions(description, n_sim_per_L, add_prefix=False):
+def plot_random_descriptions(description, n_sim_per_L, add_prefix=False,dot_size=100):
     # Generate random descriptions
-    text_list, level_indices = simulate_random_descriptions(description, n_sim_per_L)
+    text_list, level_indices, description_list, description_sampled_list = simulate_random_descriptions(description, n_sim_per_L)
+
+    description_list_embedding = extract_embedding(description_list, type="text", normalize=False)
+    description_list_norm = description_list_embedding.norm(dim=-1).cpu().numpy()
+    
+    # Create a mapping from description to norm
+    description_to_norm = {desc: norm for desc, norm in zip(description_list, description_list_norm)}
+    
+    # For each sampled set, compute the mean norm
+    description_sampled_norm = []
+    for sampled_set in description_sampled_list:
+        norms = [description_to_norm[desc] for desc in sampled_set]
+        description_sampled_norm.append(np.mean(norms))
+
     if add_prefix:
         text_list = [f"A photo of {text}" for text in text_list]
     # Extract embeddings
     text_embeddings = extract_embedding(text_list, type="text", normalize=False)
     text_norms = text_embeddings.norm(dim=-1).cpu().numpy()
-
+    
+    
     # Plot norm vs. level with scatter points
     import matplotlib.pyplot as plt
     import seaborn as sns
@@ -313,12 +329,26 @@ def plot_random_descriptions(description, n_sim_per_L, add_prefix=False):
     # Create figure and axis
     fig, ax = plt.subplots(figsize=(8, 6))
     
-    # Use seaborn regplot with polynomial order 2
+    # Create scatter plot with color mapping
+    scatter = ax.scatter(
+        level_indices,
+        text_norms,
+        alpha=0.6,
+        s=dot_size,
+        c=description_sampled_norm,
+        cmap='viridis'
+    )
+    
+    # Add colorbar
+    plt.colorbar(scatter, ax=ax, label='Mean Description Norm')
+    
+    
+    # Add polynomial regression line
     sns.regplot(
         x=level_indices,
         y=text_norms,
         order=2,
-        scatter_kws={'alpha': 0.6, 's': 50, 'color': 'steelblue'},
+        scatter=False,
         line_kws={'color': 'r', 'alpha': 0.4},
         ax=ax
     )
@@ -329,10 +359,46 @@ def plot_random_descriptions(description, n_sim_per_L, add_prefix=False):
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
+    
+    if True:
+        # Plot correlation between sampled_norm and text_norm
+        fig2, ax2 = plt.subplots(figsize=(8, 6))
+        
+        # Get unique levels and assign colors
+        unique_levels = sorted(set(level_indices))
+        colors = plt.cm.tab10(np.linspace(0, 1, len(unique_levels)))
+        
+        # Plot each level with a different color
+        for i, level in enumerate(unique_levels):
+            # Get indices for this level
+            level_mask = np.array(level_indices) == level
+            level_sampled_norm = np.array(description_sampled_norm)[level_mask]
+            level_text_norms = text_norms[level_mask]
+            
+            # Scatter plot for this level
+            ax2.scatter(level_sampled_norm, level_text_norms, 
+                    alpha=0.6, s=dot_size, color=colors[i], 
+                    label=f'Level {level}')
+            
+            # Add overall regression line
+            sns.regplot(
+                x=level_sampled_norm,
+                y=level_text_norms,
+                scatter=False,
+                line_kws={'color': colors[i], 'alpha': 0.6},
+                ax=ax2
+            )
+        
+        ax2.set_xlabel('Mean Norm of Sampled Descriptions', fontsize=12)
+        ax2.set_ylabel('Text Embedding Norm', fontsize=12)
+        ax2.set_title(f'Correlation: Sampled Description Norm vs Text Norm\n{description}', fontsize=14)
+        ax2.legend(loc='best', fontsize=10)
+        ax2.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.show()
 
 
-# %%
-# Define increasing information descriptions
+# %% Define increasing information descriptions
 increasing_information_description_dict = {
     "man": {
         "L1": "one man",
@@ -434,5 +500,5 @@ increasing_information_description_dict = {
 
 # %% law 1: more description, shorter norm
 for key in increasing_information_description_dict.keys():
-    plot_random_descriptions(increasing_information_description_dict[key]["L10"], n_sim_per_L=50, add_prefix=True)
+    plot_random_descriptions(increasing_information_description_dict[key]["L10"], n_sim_per_L=100, add_prefix=True)
 # %%
